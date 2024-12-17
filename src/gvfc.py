@@ -218,9 +218,9 @@ def BoundMirrorShrink(A):
 
 
 #! Cargar la imagen
-image = cv2.imread("bear.jpg", cv2.IMREAD_GRAYSCALE)
+# image = cv2.imread("bear.jpg", cv2.IMREAD_GRAYSCALE)
 # image = cv2.imread("car_2.bmp", cv2.IMREAD_GRAYSCALE)
-# image = cv2.imread("car_3.bmp", cv2.IMREAD_GRAYSCALE)
+image = cv2.imread("car_3.bmp", cv2.IMREAD_GRAYSCALE)
 # image = cv2.imread("car_4.bmp", cv2.IMREAD_GRAYSCALE)
 # image = cv2.imread("fighter.jpg", cv2.IMREAD_GRAYSCALE)
 # image = cv2.imread("gourd.bmp", cv2.IMREAD_GRAYSCALE)
@@ -242,9 +242,13 @@ plt.subplot(131)
 plt.imshow(image, cmap="gray")
 plt.title("Imagen Original")
 
+
+
 plt.subplot(132)
 plt.quiver(u, v)
 plt.title("Campo GVF")
+
+
 
 plt.subplot(133)
 # plt.imshow(np.sqrt(u**2 + v**2), cmap='viridis')
