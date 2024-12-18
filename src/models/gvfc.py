@@ -1,8 +1,9 @@
+import os
+
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.ndimage import laplace as del2
-
 
 
 def GVF(f, mu, ITER):
@@ -17,40 +18,32 @@ def GVF(f, mu, ITER):
 
     fmin = np.min(f[:, :])
     fmax = np.max(f[:, :])
-    f = (f - fmin) / (fmax - fmin)
-    # % Normalize f to the range [0,1]
+    f = (f - fmin) / (fmax - fmin)  # % Normalize f to the range [0,1]
 
-    #! f = BoundMirrorExpand(f);  #% Take care of boundary condition
     f = BoundMirrorExpand(f)  # % Take care of boundary condition
-
     [fx, fy] = np.gradient(f)  # % Calculate the gradient of the edge map
-    u = fx
-    v = fy
-    # % Initialize GVF to the gradient
+    u = fx  # % Initialize GVF to the gradient
+    v = fy  # % Initialize GVF to the gradient
     SqrMagf = fx * fx + fy * fy  # % Squared magnitude of the gradient field
 
     # % Iteratively solve for the GVF u,v
     for i in range(ITER):
-        #! u = BoundMirrorEnsure(u)
-        #! v = BoundMirrorEnsure(v)
         u = BoundMirrorEnsure(u)
         v = BoundMirrorEnsure(v)
 
         u = u + mu * 4 * del2(u) - SqrMagf * (u - fx)
         v = v + mu * 4 * del2(v) - SqrMagf * (v - fy)
-        print(1, "%3d", i)
-        if i % 20 == 0:
-            print(1, "\n")
 
-    print(1, "\n")
+        # print(1, "%3d", i)
+        # if i % 20 == 0:
+        #     print(1, "\n")
 
-    #! u = BoundMirrorShrink(u);
-    #! v = BoundMirrorShrink(v);
+    # print(1, "\n")
+
     u = BoundMirrorShrink(u)
     v = BoundMirrorShrink(v)
 
     return [u, v]
-
 
 
 def BoundMirrorEnsure(A):
@@ -125,7 +118,6 @@ def BoundMirrorEnsure(A):
     # % mirror top and bottom boundary
 
     return B
-
 
 
 def BoundMirrorExpand(A):
@@ -206,7 +198,6 @@ def BoundMirrorExpand(A):
     return B
 
 
-
 def BoundMirrorShrink(A):
     [m, n] = A.shape
     yi = np.arange(0, m - 1)
@@ -216,44 +207,31 @@ def BoundMirrorShrink(A):
     return B
 
 
+if __name__ == "__main__":
+    # Cargar la imagen
+    filename = "car_3.bmp"
+    image = cv2.imread(os.path.join("..", "assets", filename), cv2.IMREAD_GRAYSCALE)
 
-#! Cargar la imagen
-# image = cv2.imread("bear.jpg", cv2.IMREAD_GRAYSCALE)
-# image = cv2.imread("car_2.bmp", cv2.IMREAD_GRAYSCALE)
-image = cv2.imread("car_3.bmp", cv2.IMREAD_GRAYSCALE)
-# image = cv2.imread("car_4.bmp", cv2.IMREAD_GRAYSCALE)
-# image = cv2.imread("fighter.jpg", cv2.IMREAD_GRAYSCALE)
-# image = cv2.imread("gourd.bmp", cv2.IMREAD_GRAYSCALE)
-# image = cv2.imread("hist_0.jpg", cv2.IMREAD_GRAYSCALE)
+    # Calcular GVF
+    mu = 0.2  # Puedes ajustar este valor según tus necesidades
+    ITER = 1  # Puedes ajustar este valor según tus necesidades
+    u, v = GVF(image, mu, ITER)
 
+    # Mostrar la imagen original y el resultado del GVF
+    plt.figure(figsize=(10, 5))
 
+    plt.subplot(131)
+    plt.imshow(image, cmap="gray")
+    plt.title("Imagen Original")
 
-#! Calcular GVF
-# ? mu = 0.2  # Puedes ajustar este valor según tus necesidades
-# ? ITER = 1  # Puedes ajustar este valor según tus necesidades
-mu = 0.20  # Puedes ajustar este valor según tus necesidades
-ITER = 1  # Puedes ajustar este valor según tus necesidades
-u, v = GVF(image, mu, ITER)
+    plt.subplot(132)
+    plt.quiver(u, v)
+    plt.title("Campo GVF")
 
-# Mostrar la imagen original y el resultado del GVF
-plt.figure(figsize=(10, 5))
-
-plt.subplot(131)
-plt.imshow(image, cmap="gray")
-plt.title("Imagen Original")
-
-
-
-plt.subplot(132)
-plt.quiver(u, v)
-plt.title("Campo GVF")
-
-
-
-plt.subplot(133)
-# plt.imshow(np.sqrt(u**2 + v**2), cmap='viridis')
-plt.imshow(np.sqrt(u**2 + v**2), cmap="gist_gray")
-plt.title("Magnitud del Campo GVF")
-plt.show()
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+    plt.subplot(133)
+    # plt.imshow(np.sqrt(u**2 + v**2), cmap='viridis')
+    plt.imshow(np.sqrt(u**2 + v**2), cmap="gist_gray")
+    plt.title("Magnitud del Campo GVF")
+    plt.show()
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
