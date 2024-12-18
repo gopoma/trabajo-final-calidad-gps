@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 import uuid
 
 import cv2
@@ -54,14 +54,17 @@ def upload_image():
     plt.draw()
     plt.show(block=False)
     #!plt.pause(0.5)
-    plt.savefig(os.path.join("archive", f"{filename}.jpg"))
+    plt.savefig(os.path.join("static", f"{filename}.jpg"))
 
 #! work
 
     # Return the file name as JSON
-    return jsonify({"image_name": filename})
+    return jsonify({"image_name": f"{filename}.jpg"})
 
-
+@app.route('/<path:path>')
+def send_report(path):
+    # Using request args for path will expose you to directory traversal attacks
+    return send_from_directory('static', path)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  python-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: python_app_container
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development  # Example environment variable
+    command: python app.py  # Override CMD if needed
