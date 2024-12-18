@@ -1,7 +1,5 @@
-static/*
-!static/.gitkeep
-uploads/*
-!uploads/.gitkeep
+static
+uploads
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

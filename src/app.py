@@ -17,8 +17,7 @@ app = Flask(__name__)
 def hello():
     return "Hello, World!"
 
-# Endpoint to receive the image and return the image name
-@app.route('/upload', methods=['POST'])
+@app.route('/', methods=['POST'])
 def upload_image():
     # Check if the image is in the request
     if 'file' not in request.files:
@@ -31,35 +30,43 @@ def upload_image():
         return jsonify({"error": "No selected file"}), 400
 
     # Save the file with a unique name (to avoid conflicts)
-    filename = f"{uuid.uuid4().hex}_{file.filename}"
-    file_path = os.path.join("uploads", filename)
+    filename = f"{uuid.uuid4()}_{file.filename}"
+    filepath = os.path.join("uploads", filename)
 
     # Make sure the uploads directory exists
-    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+
+    # Make sure the static directory exists
+    os.makedirs(os.path.join("static"), exist_ok=True)
 
     # Save the file to the server
-    file.save(file_path)
+    file.save(filepath)
 
-#! work
-    print(f"filename:{filename}")
-    info = ChanVeseSegmentation(os.path.join("uploads", filename))
+    multiple = request.args.get("multiple")
+    multiple = (multiple == "true")
+
+    info = ChanVeseSegmentation(os.path.join("uploads", filename), multiple)
     image = cv2.imread(os.path.join("uploads", filename))
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
     matplotlib.use('Agg')  # Use a non-interactive backend
-    plt.imshow(image)
-    plt.xticks([])
-    plt.yticks([])
-    plt.contour(info[-1], [0], colors="r", linewidth=2)
-    plt.draw()
-    plt.show(block=False)
-    #!plt.pause(0.5)
-    plt.savefig(os.path.join("static", f"{filename}.jpg"))
 
-#! work
+    results = []
+    for i in range(len(info)):
+        plt.imshow(image)
+        plt.xticks([])
+        plt.yticks([])
+        plt.contour(info[i], [0], colors="r", linewidth=2)
+        plt.draw()
+        plt.show(block=False)
 
-    # Return the file name as JSON
-    return jsonify({"image_name": f"{filename}.jpg"})
+        current_filename = f"{filename}-{i + 1}.jpg"
+        plt.savefig(os.path.join("static", current_filename))
+        results.append(current_filename)
+
+        plt.cla()
+
+    return jsonify({"images": results})
 
 @app.route('/<path:path>')
 def send_report(path):
