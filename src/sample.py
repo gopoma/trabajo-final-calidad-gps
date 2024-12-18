@@ -1,7 +1,7 @@
 import cv2
 import matplotlib
 import matplotlib.pyplot as plt
-from enhance import ChanVeseSegmentation
+from models.chan_vese_segmentation import ChanVeseSegmentation
 
 filepath="hist_0.jpg"
 

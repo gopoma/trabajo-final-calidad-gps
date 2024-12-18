@@ -7,7 +7,7 @@ import cv2
 import matplotlib
 import matplotlib.pyplot as plt
 
-from enhance import ChanVeseSegmentation
+from models.chan_vese_segmentation import ChanVeseSegmentation
 
 
 
@@ -54,7 +54,7 @@ def upload_image():
     plt.draw()
     plt.show(block=False)
     #!plt.pause(0.5)
-    plt.savefig(f"{filename}-enhance.jpg")
+    plt.savefig(os.path.join("archive", f"{filename}.jpg"))
 
 #! work
 
