@@ -1,6 +1,7 @@
 import os
 
 from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
 import uuid
 
 import cv2
@@ -12,6 +13,8 @@ from models.chan_vese_segmentation import ChanVeseSegmentation
 
 
 app = Flask(__name__)
+
+CORS(app)
 
 @app.route("/")
 def hello():
