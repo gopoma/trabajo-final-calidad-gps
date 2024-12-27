@@ -14,7 +14,7 @@ from models.chan_vese_segmentation import ChanVeseSegmentation
 
 app = Flask(__name__)
 
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "https://segmented-app.netlify.app"}})
 
 @app.route("/")
 def hello():
@@ -77,4 +77,4 @@ def send_report(path):
     return send_from_directory('static', path)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=False)
