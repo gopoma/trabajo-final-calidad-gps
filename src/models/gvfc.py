@@ -8,37 +8,31 @@ from scipy.ndimage import laplace as del2
 
 def GVF(f, mu, ITER):
     """
-    %GVF Compute gradient vector flow.
-    %   [u,v] = GVF(f, mu, ITER) computes the
-    %   GVF of an edge map f.  mu is the GVF regularization coefficient
-    %   and ITER is the number of iterations that will be computed.
+    %GVF Calcula el flujo vectorial de gradiente.
+    %   [u,v] = GVF(f, mu, ITER) calcula el
+    %   GVF de un mapa de bordes f.  mu es el coeficiente de regularización del GVF
+    %   e ITER es el número de iteraciones que se calcularán.
     """
 
-    [m, n] = f.shape  # % Filas, cols, canales
+    [m, n] = f.shape  # % Filas, columnas, canales
 
     fmin = np.min(f[:, :])
     fmax = np.max(f[:, :])
-    f = (f - fmin) / (fmax - fmin)  # % Normalize f to the range [0,1]
+    f = (f - fmin) / (fmax - fmin)  # % Normaliza f al rango [0,1]
 
-    f = BoundMirrorExpand(f)  # % Take care of boundary condition
-    [fx, fy] = np.gradient(f)  # % Calculate the gradient of the edge map
-    u = fx  # % Initialize GVF to the gradient
-    v = fy  # % Initialize GVF to the gradient
-    SqrMagf = fx * fx + fy * fy  # % Squared magnitude of the gradient field
+    f = BoundMirrorExpand(f)  # % Se encarga de la condición de frontera
+    [fx, fy] = np.gradient(f)  # % Calcula el gradiente del mapa de bordes
+    u = fx  # % Inicializa el GVF con el gradiente
+    v = fy  # % Inicializa el GVF con el gradiente
+    SqrMagf = fx * fx + fy * fy  # % Magnitud al cuadrado del campo de gradiente
 
-    # % Iteratively solve for the GVF u,v
+    # % Resuelve iterativamente el GVF u,v
     for i in range(ITER):
         u = BoundMirrorEnsure(u)
         v = BoundMirrorEnsure(v)
 
         u = u + mu * 4 * del2(u) - SqrMagf * (u - fx)
         v = v + mu * 4 * del2(v) - SqrMagf * (v - fy)
-
-        # print(1, "%3d", i)
-        # if i % 20 == 0:
-        #     print(1, "\n")
-
-    # print(1, "\n")
 
     u = BoundMirrorShrink(u)
     v = BoundMirrorShrink(v)

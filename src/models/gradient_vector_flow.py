@@ -1,6 +1,6 @@
 import sys
 
-sys.path.append("../helpers")  # Use predefined utility functions
+sys.path.append("../helpers")  # Agregar el directorio de utilidades predefinidas
 
 import cv2
 import numpy as np
@@ -10,31 +10,29 @@ from scipy.interpolate import splprep, splev, RectBivariateSpline
 from contour import getContour
 
 
-## Sobel kernels
-# Here, we are going to use image coordinates matching
-# array coordinates like (x:height, y:width)
+# Kernels de Sobel
+# Aquí usamos coordenadas de imagen que coinciden con las coordenadas de arreglos
+# en formato (x:altura, y:ancho)
 SOBEL_X = np.array([[1.0, 2.0, 1.0], [0.0, 0.0, 0.0], [-1.0, -2.0, -1.0]])
 SOBEL_Y = np.array([[1.0, 0.0, -1.0], [2.0, 0.0, -2.0], [1.0, 0.0, -1.0]])
 
 
-# Laplacian kernel
+# Kernel Laplaciano para la curvatura
 LAPLACIAN = np.array([[0.0, 1.0, 0.0], [1.0, -4.0, 1.0], [0.0, 1.0, 0.0]])
 
 
 def _calcLaplacian(x):
-    """Apply Laplacian operator"""
+    """Aplicar el operador Laplaciano."""
     return convolve(x, LAPLACIAN, mode="nearest")
 
 
 def _calcGradient(x):
-    """Return gradient map"""
-    ## Apply gaussian filter
-    # x = gaussian_filter(x, sigma=1)
+    """Devuelve el mapa de gradiente."""
 
-    # Pad input domain
+    # Padding para evitar errores en los bordes
     pad = np.pad(x, pad_width=1, mode="edge")
 
-    # Calculate derivatives
+    # Calcular las derivadas usando diferencias centradas
     gradx = 0.5 * (pad[2:, 1:-1] - pad[:-2, 1:-1])
     grady = 0.5 * (pad[1:-1, 2:] - pad[1:-1, :-2])
 
@@ -42,73 +40,73 @@ def _calcGradient(x):
 
 
 def _getEdgeMap(u, sigma=2):
-    """Return image edge map by  using Sobel operator"""
-    # Apply gaussian filter
+    """Devuelve un mapa de bordes usando el operador Sobel."""
+    # Aplicar filtro Gaussiano para suavizar la imagen
     u = gaussian_filter(u, sigma=sigma)
 
-    # Extract image edges with Sobel filter
+    # Extraer bordes con el filtro Sobel
     fx = convolve(u, SOBEL_X, mode="nearest")
     fy = convolve(u, SOBEL_Y, mode="nearest")
 
+    # Retornar la magnitud del gradiente
     return np.sqrt(0.5 * (fx**2.0 + fy**2.0))
 
 
 class GVFSnake(object):
-    """Gradient vector flow based snake evolution for image segmentation
+    """Snake basado en flujo vectorial de gradiente (GVF) para segmentación de imágenes.
 
-    Parameters
+    Parámetros:
     ----------------
     image: (H, W) ndarray
-        input image.
+        Imagen de entrada.
     seed: (H, W) ndarray
-        input seed.
+        Semilla inicial.
 
-    Returns
+    Resultados:
     ----------------
-    Region (H, W) ndarray
-        segmentation label
+    Region: (H, W) ndarray
+        Etiquetas de segmentación.
     """
 
     def __init__(
         self,
-        alpha=0.01,
-        beta=0.1,
-        gamma=0.01,
-        maxIter=1000,
-        maxDispl=1.0,
-        eps=0.1,
-        period=10,
+        alpha=0.01,   # Parámetro de continuidad
+        beta=0.1,     # Parámetro de suavidad
+        gamma=0.01,   # Paso artificial en el tiempo
+        maxIter=1000, # Máximo número de iteraciones
+        maxDispl=1.0, # Desplazamiento máximo permitido
+        eps=0.1,      # Tolerancia para convergencia
+        period=10,    # Periodo para el historial de energías
     ):
-        # Model parameters
-        self.alpha = alpha  # continuity parameter
-        self.beta = beta  # smoothness parameter
-        self.gamma = gamma  # artificial time step
+        # Parámetros del Modelo
+        self.alpha = alpha
+        self.beta = beta
+        self.gamma = gamma
 
-        # Numerical parameters
+        # Parámetros Numéricos
         self.maxIter = int(maxIter)
         self.maxDispl = float(maxDispl)
         self.eps = eps
 
-        # Evolution history
+        # Historial de la evolución
         self.period = period
-        self.xhistory = [0] * period  # container of snake energies for evolution
+        self.xhistory = [0] * period
         self.yhistory = [0] * period
 
     def getGradientVectorFlow(
         self, fx, fy, CLF=0.25, mu=1.0, dx=1.0, dy=1.0, maxIter=1000, eps=1.0e-6
     ):
-        """Return gradient vector flow"""
-        # Set artificial time step under CFL restriction
+        """Calcular el flujo vectorial de gradiente (GVF)."""
+        # Paso artificial bajo la restricción CFL
         dt = CLF * dx * dy / mu
 
-        # Set coefficients
+        # Coeficientes para la ecuación
         b = fx**2.0 + fy**2.0
         c1, c2 = b * fx, b * fy
 
-        # Optimize gradient vector flow
-        currGVF = (fx, fy)  # initially set the vector flow to be gradient of edge map
+        currGVF = (fx, fy)  # Inicializar flujo vectorial con el gradiente del mapa de bordes
         for i in range(maxIter):
-            # Evolve flow
+            # Evolucionar flujo
             nextGVF = (
                 (1.0 - b * dt) * currGVF[0]
                 + CLF * _calcLaplacian(currGVF[0])
@@ -118,7 +116,7 @@ class GVFSnake(object):
                 + c2 * dt,
             )
 
-            # Update flow
+            # Actualizar flujo
             delta = np.sqrt(
                 (currGVF[0] - nextGVF[0]) ** 2.0 + (currGVF[1] - nextGVF[1]) ** 2.0
             )
@@ -130,42 +128,42 @@ class GVFSnake(object):
         return currGVF
 
     def run(self, image, seed):
-        # Convert input image format to be a float container
+        # Convertir la imagen de entrada al formato de punto flotante
         image = np.array(image, dtype=np.float32)
         image = (image - image.min()) / (image.max() - image.min())
 
-        # Get input dimensions
+        # Obtener dimensiones de entrada
         if len(image.shape) == 2:
             height, width = image.shape
         elif len(image.shape) == 3:
             height, width, _ = image.shape
             image = np.mean(image, axis=-1)
 
-        # Get contour from seed region
+        # Obtener el contorno inicial a partir de la región semilla
         contour = np.array(getContour(seed), dtype=np.float32)
 
-        # Initialize snake pivots
+        # Inicializar pivotes del snake
         tck, _ = splprep(contour.T, s=0)
         snake = splev(np.linspace(0, 1, 2 * len(contour)), tck)
         snake = np.array(snake).T.astype(np.float32)
         snake = np.array(contour).astype(np.float32)
 
-        # Discretize snake
+        # Discretizar el snake
         xx, yy = snake[:, 0], snake[:, 1]
         for p in range(self.period):
             self.xhistory[p] = np.zeros(len(snake), dtype=np.float32)
             self.yhistory[p] = np.zeros(len(snake), dtype=np.float32)
 
-        # Evaluate image energies
+        # Evaluar energías de la imagen
         edge = _getEdgeMap(image)
 
-        # Evaluate gradient of edge map
+        # Evaluar el gradiente del mapa de bordes
         gradx, grady = _calcGradient(edge)
 
-        # Get gradient vector flow (i.e., GVF)
+        # Obtener flujo vectorial de gradiente (GVF)
         GVF = self.getGradientVectorFlow(gradx, grady)
 
-        # Get continous GVF
+        # Obtener GVF continuo mediante interpolación
         xinterp = RectBivariateSpline(
             np.arange(height), np.arange(width), GVF[0], kx=2, ky=2, s=0
         )
@@ -173,42 +171,41 @@ class GVFSnake(object):
             np.arange(height), np.arange(width), GVF[1], kx=2, ky=2, s=0
         )
 
-        # Build snake shape matrix
+        # Construir matriz de forma del snake
         matrix = np.eye(len(snake), dtype=float)
         a = (
             np.roll(matrix, -1, axis=0) + np.roll(matrix, -1, axis=1) - 2.0 * matrix
-        )  # second order derivative, central difference
+        )  # Derivada de segundo orden
         b = (
             np.roll(matrix, -2, axis=0)
             + np.roll(matrix, -2, axis=1)
             - 4.0 * np.roll(matrix, -1, axis=0)
             - 4.0 * np.roll(matrix, -1, axis=1)
             + 6.0 * matrix
-        )  # fourth order derivative, central difference
+        )  # Derivada de cuarto orden
         A = -self.alpha * a + self.beta * b
 
-        # Make inverse matrix needed for the numerical scheme
+        # Matriz inversa necesaria para el esquema numérico
         inv = np.linalg.inv(A + self.gamma * matrix).astype(np.float32)
 
-        # Do optimization
+        # Realizar optimización
         for step in range(self.maxIter):
-            # Get point-wise energy values
+            # Obtener valores de energía punto a punto
             fx = xinterp(xx, yy, grid=False).astype(np.float32)
             fy = yinterp(xx, yy, grid=False).astype(np.float32)
 
-            # Evaluate new snake
+            # Evaluar nuevo snake
             xn = inv @ (self.gamma * xx + fx)
             yn = inv @ (self.gamma * yy + fy)
 
-            # Confine displacements
+            # Confinar desplazamientos
             dx = self.maxDispl * np.tanh(xn - xx)
             dy = self.maxDispl * np.tanh(yn - yy)
 
-            # Update snake
+            # Actualizar snake
             xx, yy = xx + dx, yy + dy
 
-            # Verify nermerical convergency
-            # Update histories
+            # Verificar convergencia numérica
             index = step % (self.period + 1)
             if index < self.period:
                 self.xhistory[index] = xx
@@ -222,7 +219,7 @@ class GVFSnake(object):
                 if np.min(delta) < self.eps:
                     break
 
-        # Remark region of snake contour into pixel map
+        # Marcar región del contorno snake en el mapa de píxeles
         seed = cv2.fillConvexPoly(seed, points=snake.astype(int), color=1)
 
         return seed, np.stack([xx, yy], axis=1)
