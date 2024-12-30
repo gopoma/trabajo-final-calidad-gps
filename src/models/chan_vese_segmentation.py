@@ -4,7 +4,7 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 
-def ChanVeseSegmentation(filepath, multiple=False):
+def ChanVeseSegmentation(filepath, multiple=False, num=20):
     # Cargar la imagen desde la ruta especificada
     Image = cv2.imread(filepath, 1)                 # Carga la imagen en color
     image = cv2.cvtColor(Image, cv2.COLOR_BGR2GRAY) # Convierte la imagen a escala de grises
@@ -73,13 +73,20 @@ def ChanVeseSegmentation(filepath, multiple=False):
 
 
     # Parámetros de evolución
+    # mu = 1                 # Peso del término de suavidad
+    # nu = 0.003 * 255 * 255 # Peso del término de longitud
+    # num = 20               # Número de iteraciones
+    # epison = 1             # Parámetro de regularización para Heaviside
+    # step = 0.1             # Paso de evolución
+    # LSF = IniLSF           # Inicializar la función de nivel
+
+    # Parámetros de evolución
     mu = 1                 # Peso del término de suavidad
     nu = 0.003 * 255 * 255 # Peso del término de longitud
-    num = 20               # Número de iteraciones
+    # num = 20               # Número de iteraciones
     epison = 1             # Parámetro de regularización para Heaviside
     step = 0.1             # Paso de evolución
     LSF = IniLSF           # Inicializar la función de nivel
-
 
 
     # Evolución iterativa de la función de nivel
